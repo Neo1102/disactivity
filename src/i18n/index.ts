@@ -27,7 +27,7 @@ i18n
       order: ['navigator', 'htmlTag', 'localStorage'],
       caches: ['localStorage'],
     },
-  });
+  }).catch(console.error);
 
 export default i18n;
 

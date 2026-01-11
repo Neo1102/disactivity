@@ -90,7 +90,7 @@ export function TitleBar({ runningGames = new Map(), onStopGame }: TitleBarProps
         }
 
         // Check for updates on boot
-        checkForUpdates()
+        checkForUpdates().catch(console.error)
     }, [])
 
     const toggleTheme = () => {
@@ -184,13 +184,13 @@ export function TitleBar({ runningGames = new Map(), onStopGame }: TitleBarProps
     const handleUpdateButtonClick = () => {
         switch (updateState) {
             case "available":
-                downloadAndInstallUpdate()
+                downloadAndInstallUpdate().catch(console.error)
                 break
             case "ready":
-                restartApp()
+                restartApp().catch(console.error)
                 break
             case "error":
-                checkForUpdates()
+                checkForUpdates().catch(console.error)
                 break
         }
     }

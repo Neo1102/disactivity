@@ -84,8 +84,8 @@ export default function GameLauncher() {
     }
 
     useEffect(() => {
-        fetchGames()
-        fetchFavorites()
+        fetchGames().catch(console.error)
+        fetchFavorites().catch(console.error)
     }, [])
 
     const handleSearch = () => {
@@ -115,7 +115,7 @@ export default function GameLauncher() {
 
     const handleRefresh = () => {
         setSearchQuery("")
-        fetchGames(true)
+        fetchGames(true).catch(console.error)
     }
 
     const handleStartGame = async (game: Game) => {
