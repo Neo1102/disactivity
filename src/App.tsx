@@ -428,6 +428,10 @@ export default function GameLauncher() {
                                 ) : (
                                     <>{t("footer.noGames")}</>
                                 )}
+
+                                <p>
+                                    Copyright © 2026 holasoyender
+                                </p>
                             </div>
                         </>
                     )}
