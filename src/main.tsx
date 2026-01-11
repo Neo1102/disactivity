@@ -5,8 +5,6 @@ import "./App.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-      <body className={`font-sans antialiased`}>
-        <App />
-      </body>
+      <App />
   </React.StrictMode>,
 );

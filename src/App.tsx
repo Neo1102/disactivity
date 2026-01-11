@@ -147,7 +147,7 @@ export default function GameLauncher() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-background">
+        <div className="min-h-screen flex flex-col bg-background font-sans antialiased">
             <TitleBar />
 
             <main className="flex-1 overflow-auto mx-5">

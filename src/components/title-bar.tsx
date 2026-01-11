@@ -38,33 +38,26 @@ export function TitleBar() {
     return (
         <header
             data-tauri-drag-region
-            className="sticky top-0 z-50 flex items-center justify-between h-10 px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border"
+            className="sticky top-0 z-50 flex items-center justify-between h-10 px-4 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/85 border-b border-border select-none"
         >
             {/* Title */}
-            <div className="flex items-center gap-2" data-tauri-drag-region>
-                <Gamepad2 className="h-5 w-5 text-primary" />
-                <span className="font-semibold text-sm text-foreground">Game Launcher</span>
+            <div className="flex items-center gap-2 flex-1" data-tauri-drag-region>
+                <Gamepad2 className="h-5 w-5 text-primary pointer-events-none" />
+                <span className="font-semibold text-sm text-foreground pointer-events-none">Game Launcher</span>
             </div>
 
             {/* Window Controls - Apple style */}
             <div
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 relative z-10"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
+                style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
             >
-                {/* Maximize - Green */}
-                <button
-                    onClick={handleMaximize}
-                    className="group w-5 h-3 rounded-full bg-[#28C840] hover:bg-[#28C840]/80 flex items-center justify-center transition-colors"
-                >
-                    {isHovered && (
-                        <Square className="w-1.5 h-1.5 text-[#006500] opacity-0 group-hover:opacity-100 transition-opacity" />
-                    )}
-                </button>
 
                 {/* Minimize - Yellow */}
                 <button
                     onClick={handleMinimize}
+                    onPointerDown={(e) => e.stopPropagation()}
                     className="group w-5 h-3 rounded-full bg-[#FEBC2E] hover:bg-[#FEBC2E]/80 flex items-center justify-center transition-colors"
                 >
                     {isHovered && (
@@ -72,9 +65,21 @@ export function TitleBar() {
                     )}
                 </button>
 
+                {/* Maximize - Green */}
+                <button
+                    onClick={handleMaximize}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="group w-5 h-3 rounded-full bg-[#28C840] hover:bg-[#28C840]/80 flex items-center justify-center transition-colors"
+                >
+                    {isHovered && (
+                        <Square className="w-1.5 h-1.5 text-[#006500] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                </button>
+
                 {/* Close - Red */}
                 <button
                     onClick={handleClose}
+                    onPointerDown={(e) => e.stopPropagation()}
                     className="group w-5 h-3 rounded-full bg-[#FF5F57] hover:bg-[#FF5F57]/80 flex items-center justify-center transition-colors"
                 >
                     {isHovered && <X className="w-2 h-2 text-[#4A0002] opacity-0 group-hover:opacity-100 transition-opacity" />}

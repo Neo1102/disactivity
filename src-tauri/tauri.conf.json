@@ -13,8 +13,10 @@
     "windows": [
       {
         "title": "disactivity",
-        "width": 800,
-        "height": 600
+        "width": 650,
+        "height": 800,
+        "decorations": false,
+        "transparent": true
       }
     ],
     "security": {
