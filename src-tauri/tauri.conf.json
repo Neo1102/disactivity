@@ -16,7 +16,11 @@
         "width": 650,
         "height": 800,
         "decorations": false,
-        "transparent": true
+        "transparent": true,
+        "resizable": false,
+        "windowEffects": {
+          "effects": ["mica"]
+        }
       }
     ],
     "security": {
