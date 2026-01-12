@@ -26,6 +26,10 @@
 
 The app fetches the complete list of detectable games directly from Discord's API, so you have access to thousands of games to choose from.
 
+<p align="center">
+  <img src="public/banner.png" alt="Disactivity Logo">
+</p>
+
 ## ✨ Features
 
 - 🎮 **Thousands of Games** - Browse and search through Discord's complete detectable games database
