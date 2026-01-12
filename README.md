@@ -13,7 +13,7 @@
   <a href="https://github.com/holasoyender/disactivity/releases/latest">
     <img src="https://img.shields.io/github/v/release/holasoyender/disactivity?style=flat-square" alt="Latest Release">
   </a>
-  <a href="https://github.com/holasoyender/disactivity/blob/main/LICENSE">
+  <a href="https://github.com/holasoyender/disactivity/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/holasoyender/disactivity?style=flat-square" alt="License">
   </a>
 </p>
