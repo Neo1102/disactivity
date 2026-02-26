@@ -40,6 +40,7 @@ export default function GameLauncher() {
     const [runningGames, setRunningGames] = useState<Set<string>>(new Set())
     const [loadingGames, setLoadingGames] = useState<Set<string>>(new Set())
     const [favorites, setFavorites] = useState<Set<string>>(new Set())
+    const [gameStartTimes, setGameStartTimes] = useState<Map<string, number>>(new Map())
     const ITEMS_PER_PAGE = 50
 
     const fetchGames = async (forceRefresh: boolean = false) => {
@@ -118,7 +119,7 @@ export default function GameLauncher() {
         fetchGames(true).catch(console.error)
     }
 
-    const handleStartGame = async (game: Game) => {
+    const handleStartGame = async (game: Game, selectedExecutable?: string) => {
         if (!game.executables || game.executables.length === 0) {
             toast.error(t("toast.cannotStartGame.title"), {
                 description: t("toast.cannotStartGame.noExecutables"),
@@ -132,9 +133,11 @@ export default function GameLauncher() {
             await invoke<string>("start_game", {
                 gameId: game.id,
                 executables: game.executables,
+                selectedExecutable: selectedExecutable || null,
             })
 
             setRunningGames((prev) => new Set(prev).add(game.id))
+            setGameStartTimes((prev) => new Map(prev).set(game.id, Date.now()))
             toast.success(t("toast.gameStarted.title"), {
                 description: t("toast.gameStarted.description", { name: game.name }),
             })
@@ -160,6 +163,11 @@ export default function GameLauncher() {
 
             setRunningGames((prev) => {
                 const next = new Set(prev)
+                next.delete(gameId)
+                return next
+            })
+            setGameStartTimes((prev) => {
+                const next = new Map(prev)
                 next.delete(gameId)
                 return next
             })
@@ -241,23 +249,27 @@ export default function GameLauncher() {
 
     // Create a map of running games info for the TitleBar task manager
     const runningGamesInfo = useMemo(() => {
-        const map = new Map<string, { game: Game; isLoading: boolean }>()
+        const map = new Map<string, { game: Game; isLoading: boolean; startTime: number }>()
         runningGames.forEach((gameId) => {
             const game = games.find((g) => g.id === gameId)
             if (game) {
-                map.set(gameId, { game, isLoading: loadingGames.has(gameId) })
+                map.set(gameId, {
+                    game,
+                    isLoading: loadingGames.has(gameId),
+                    startTime: gameStartTimes.get(gameId) || Date.now(),
+                })
             }
         })
         return map
-    }, [runningGames, loadingGames, games])
+    }, [runningGames, loadingGames, games, gameStartTimes])
 
     return (
         <div className="h-screen flex flex-col bg-background/90 dark:bg-background/80 backdrop-blur-xl font-sans antialiased overflow-hidden">
             <TitleBar runningGames={runningGamesInfo} onStopGame={handleStopGame} />
 
             <ScrollArea className="flex-1 mt-10">
-                <main className="mx-5 pb-5">
-                    <div className="container mx-auto px-4 py-6 max-w-4xl">
+                <main className="mx-5 pb-5 overflow-hidden">
+                    <div className="container mx-auto px-4 py-6 max-w-4xl overflow-hidden">
 
                     {/* Search Bar */}
                     <div className="flex gap-2 mb-6">
@@ -311,6 +323,7 @@ export default function GameLauncher() {
                                                 isRunning={runningGames.has(game.id)}
                                                 isLoading={loadingGames.has(game.id)}
                                                 isFavorite={true}
+                                                startTime={gameStartTimes.get(game.id)}
                                                 onStart={handleStartGame}
                                                 onStop={handleStopGame}
                                                 onToggleFavorite={handleToggleFavorite}
@@ -331,6 +344,7 @@ export default function GameLauncher() {
                                             isRunning={runningGames.has(game.id)}
                                             isLoading={loadingGames.has(game.id)}
                                             isFavorite={favorites.has(game.id)}
+                                            startTime={gameStartTimes.get(game.id)}
                                             onStart={handleStartGame}
                                             onStop={handleStopGame}
                                             onToggleFavorite={handleToggleFavorite}

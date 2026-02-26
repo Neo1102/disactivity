@@ -36,6 +36,7 @@ type UpdateState = "idle" | "checking" | "available" | "downloading" | "ready" |
 interface RunningGameInfo {
     game: Game
     isLoading: boolean
+    startTime: number
 }
 
 interface TitleBarProps {
@@ -47,6 +48,14 @@ export function TitleBar({ runningGames = new Map(), onStopGame }: TitleBarProps
     const { t } = useTranslation()
     const [isHovered, setIsHovered] = useState(false)
     const [isDark, setIsDark] = useState(false)
+    const [, setTick] = useState(0)
+
+    // Tick every second to update elapsed times in the task manager
+    useEffect(() => {
+        if (runningGames.size === 0) return
+        const interval = setInterval(() => setTick((t) => t + 1), 1000)
+        return () => clearInterval(interval)
+    }, [runningGames.size])
 
     const [updateState, setUpdateState] = useState<UpdateState>("idle")
     const [updateVersion, setUpdateVersion] = useState<string>("")
@@ -240,6 +249,16 @@ export function TitleBar({ runningGames = new Map(), onStopGame }: TitleBarProps
     const runningGamesArray = Array.from(runningGames.values())
     const runningCount = runningGamesArray.length
 
+    const formatElapsedTime = (ms: number): string => {
+        const totalSeconds = Math.floor(ms / 1000)
+        const hours = Math.floor(totalSeconds / 3600)
+        const minutes = Math.floor((totalSeconds % 3600) / 60)
+        const seconds = totalSeconds % 60
+        const pad = (n: number) => n.toString().padStart(2, "0")
+        if (hours > 0) return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+        return `${pad(minutes)}:${pad(seconds)}`
+    }
+
     const getGameIconUrl = (game: Game, size: number = 64): string => {
         if (game.icon_hash) {
             return `https://cdn.discordapp.com/app-icons/${game.id}/${game.icon_hash}.png?size=${size}&keep_aspect_ratio=false`
@@ -279,7 +298,10 @@ export function TitleBar({ runningGames = new Map(), onStopGame }: TitleBarProps
                                 {t("taskManager.title")}
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            {runningGamesArray.map(({ game, isLoading }) => (
+                            {runningGamesArray.map(({ game, isLoading, startTime }) => {
+                                const elapsed = Date.now() - startTime
+                                const progress = Math.min((elapsed / (15 * 60 * 1000)) * 100, 100)
+                                return (
                                 <DropdownMenuItem
                                     key={game.id}
                                     className="flex items-center gap-3 p-2 cursor-default"
@@ -288,14 +310,25 @@ export function TitleBar({ runningGames = new Map(), onStopGame }: TitleBarProps
                                     <img
                                         src={getGameIconUrl(game, 64)}
                                         alt={game.name}
-                                        className="h-8 w-8 rounded-md object-cover bg-muted"
+                                        className="h-8 w-8 rounded-md object-cover bg-muted shrink-0"
                                         onError={(e) => {
                                             (e.target as HTMLImageElement).src = "https://cdn.discordapp.com/embed/avatars/0.png"
                                         }}
                                     />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium truncate">{game.name}</p>
-                                        <p className="text-xs text-green-500">{t("gameCard.running")}</p>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-xs text-green-500 font-medium">{formatElapsedTime(elapsed)}</span>
+                                            <span className="text-[10px] text-muted-foreground">/ 15:00</span>
+                                        </div>
+                                        <div className="mt-1 h-1 rounded-full bg-muted/50 overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-1000 ease-linear ${
+                                                    progress >= 100 ? "bg-green-500" : "bg-primary"
+                                                }`}
+                                                style={{ width: `${progress}%` }}
+                                            />
+                                        </div>
                                     </div>
                                     <Button
                                         variant="ghost"
@@ -311,7 +344,8 @@ export function TitleBar({ runningGames = new Map(), onStopGame }: TitleBarProps
                                         )}
                                     </Button>
                                 </DropdownMenuItem>
-                            ))}
+                                )
+                            })}
                             {runningCount > 1 && (
                                 <>
                                     <DropdownMenuSeparator />

@@ -1,9 +1,16 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
-import { Info, Play, Square, Loader2, Star } from "lucide-react"
+import { Info, Play, Square, Loader2, Star, ChevronDown } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export interface Executable {
     name: string
@@ -23,7 +30,8 @@ interface GameCardProps {
     isRunning: boolean
     isLoading: boolean
     isFavorite: boolean
-    onStart: (game: Game) => void
+    startTime?: number
+    onStart: (game: Game, selectedExecutable?: string) => void
     onStop: (gameId: string) => void
     onToggleFavorite: (gameId: string) => void
 }
@@ -35,8 +43,40 @@ function getGameIconUrl(game: Game, size: number = 64): string {
     return "https://cdn.discordapp.com/embed/avatars/0.png"
 }
 
-export function GameCard({ game, isRunning, isLoading, isFavorite, onStart, onStop, onToggleFavorite }: GameCardProps) {
+const FIFTEEN_MINUTES_MS = 15 * 60 * 1000
+
+function formatElapsedTime(ms: number): string {
+    const totalSeconds = Math.floor(ms / 1000)
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = totalSeconds % 60
+    const pad = (n: number) => n.toString().padStart(2, "0")
+    if (hours > 0) return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+    return `${pad(minutes)}:${pad(seconds)}`
+}
+
+export function GameCard({ game, isRunning, isLoading, isFavorite, startTime, onStart, onStop, onToggleFavorite }: GameCardProps) {
     const { t } = useTranslation()
+    const [elapsed, setElapsed] = useState(0)
+
+    useEffect(() => {
+        if (!isRunning || !startTime) {
+            setElapsed(0)
+            return
+        }
+        setElapsed(Date.now() - startTime)
+        const interval = setInterval(() => {
+            setElapsed(Date.now() - startTime)
+        }, 1000)
+        return () => clearInterval(interval)
+    }, [isRunning, startTime])
+
+    const progress = Math.min((elapsed / FIFTEEN_MINUTES_MS) * 100, 100)
+
+    const win32Executables = (game.executables || []).filter(
+        (exe) => exe.os === "win32" && !exe.name.startsWith(">")
+    )
+    const hasMultipleExecutables = win32Executables.length > 1
 
     const handleClick = () => {
         if (isRunning) {
@@ -47,7 +87,7 @@ export function GameCard({ game, isRunning, isLoading, isFavorite, onStart, onSt
     }
 
     return (
-        <div className={`flex items-center gap-4 p-3 rounded-lg border transition-colors ${
+        <div className={`flex items-center gap-4 p-3 rounded-lg border transition-colors overflow-hidden ${
             isRunning 
                 ? "border-green-500/50 bg-green-500/10 hover:bg-green-500/15" 
                 : isFavorite
@@ -70,12 +110,12 @@ export function GameCard({ game, isRunning, isLoading, isFavorite, onStart, onSt
                 )}
             </div>
 
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-foreground truncate">{game.name}</h3>
+            <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="flex items-center gap-2 min-w-0">
+                    <h3 className="font-medium text-foreground truncate min-w-0">{game.name}</h3>
                     {isRunning && (
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/20 text-green-500 font-medium">
-                            {t("gameCard.running")}
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/20 text-green-500 font-medium whitespace-nowrap shrink-0">
+                            {formatElapsedTime(elapsed)}
                         </span>
                     )}
                     <TooltipProvider delayDuration={200}>
@@ -105,6 +145,21 @@ export function GameCard({ game, isRunning, isLoading, isFavorite, onStart, onSt
                     </TooltipProvider>
                 </div>
                 <span className="text-xs text-muted-foreground font-mono">{t("gameCard.id")}: {game.id}</span>
+                {isRunning && (
+                    <div className="mt-1.5 flex items-center gap-2">
+                        <div className="flex-1 h-1.5 rounded-full bg-muted/50 overflow-hidden">
+                            <div
+                                className={`h-full rounded-full transition-all duration-1000 ease-linear ${
+                                    progress >= 100 ? "bg-green-500" : "bg-primary"
+                                }`}
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
+                            {formatElapsedTime(elapsed)} / 15:00
+                        </span>
+                    </div>
+                )}
             </div>
 
             <TooltipProvider delayDuration={200}>
@@ -131,22 +186,49 @@ export function GameCard({ game, isRunning, isLoading, isFavorite, onStart, onSt
                 </Tooltip>
             </TooltipProvider>
 
-            <Button
-                size="sm"
-                onClick={handleClick}
-                className="shrink-0"
-                variant={isRunning ? "destructive" : "default"}
-                disabled={isLoading}
-            >
-                {isLoading ? (
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                ) : isRunning ? (
-                    <Square className="h-4 w-4 mr-1.5" />
-                ) : (
-                    <Play className="h-4 w-4 mr-1.5" />
+            <div className="flex shrink-0">
+                <Button
+                    size="sm"
+                    onClick={handleClick}
+                    className={`shrink-0 ${!isRunning && hasMultipleExecutables ? "rounded-r-none" : ""}`}
+                    variant={isRunning ? "destructive" : "default"}
+                    disabled={isLoading}
+                >
+                    {isLoading ? (
+                        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                    ) : isRunning ? (
+                        <Square className="h-4 w-4 mr-1.5" />
+                    ) : (
+                        <Play className="h-4 w-4 mr-1.5" />
+                    )}
+                    {isRunning ? t("actions.stop") : t("actions.run")}
+                </Button>
+                {!isRunning && hasMultipleExecutables && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                size="sm"
+                                variant="default"
+                                className="rounded-l-none border-l border-l-primary-foreground/20 px-1.5"
+                                disabled={isLoading}
+                            >
+                                <ChevronDown className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="max-h-60 overflow-y-auto">
+                            {win32Executables.map((exe, idx) => (
+                                <DropdownMenuItem
+                                    key={idx}
+                                    onClick={() => onStart(game, exe.name)}
+                                    className="text-xs font-mono cursor-pointer"
+                                >
+                                    {exe.name}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 )}
-                {isRunning ? t("actions.stop") : t("actions.run")}
-            </Button>
+            </div>
         </div>
     )
 }

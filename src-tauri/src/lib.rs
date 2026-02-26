@@ -252,6 +252,7 @@ fn cleanup_game(temp_dir: &PathBuf) -> Result<(), String> {
 fn start_game(
     game_id: String,
     executables: Vec<Executable>,
+    selected_executable: Option<String>,
     state: tauri::State<'_, AppState>,
 ) -> Result<String, String> {
     // Check if game is already running
@@ -262,9 +263,13 @@ fn start_game(
         }
     }
 
-    // Select the best executable
-    let exe_path = select_best_executable(&executables)
-        .ok_or("No suitable win32 executable found for this game")?;
+    // Use the selected executable if provided, otherwise auto-select the best one
+    let exe_path = if let Some(selected) = selected_executable {
+        selected
+    } else {
+        select_best_executable(&executables)
+            .ok_or("No suitable win32 executable found for this game")?
+    };
 
     // Setup the executable in temp directory
     let (temp_dir, final_exe_path) = setup_game_executable(&game_id, &exe_path)?;
